@@ -1,0 +1,32 @@
+{
+    "name": "tr-jwk",
+    "version": "1.0.0",
+    "description": "JWK key generation library (HMAC, EC, RSA, ML-DSA, AES)",
+    "main": "index.js",
+    "scripts": {
+        "test": "node ./test/test.js"
+    },
+    "engines": {
+        "node": ">=24.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/rinne/node-tr-jwk.git"
+    },
+    "keywords": [
+        "jwk",
+        "security",
+        "cryptography",
+        "json"
+    ],
+    "author": {
+        "name": "Timo J. Rinne",
+        "email": "tri@iki.fi",
+        "url": "https://github.com/rinne/"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/rinne/node-tr-jwk/issues"
+    },
+    "homepage": "https://github.com/rinne/node-tr-jwk#readme"
+}
