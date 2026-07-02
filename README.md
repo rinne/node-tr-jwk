@@ -92,6 +92,35 @@ const { secretKey, publicKey } = ecKeyGen('P-256');
 
 Both returned JWKs share the same `kid`.
 
+## `jwk-gen` command line tool
+
+Generates a key or a key pair and writes it to file(s).
+
+```sh
+jwk-gen -a <alg> [ -k <kid> ] <file>
+```
+
+Options:
+
+- `-a <alg>`, `--algorithm=<alg>` — key algorithm; any `alg` accepted
+  by `macKeyGen` or `cipherKeyGen`, or an EC curve accepted by
+  `ecKeyGen`
+- `-k <kid>`, `--key-identifier=<kid>` — key identifier; a random
+  UUID is assigned if not given
+
+A symmetric key is written to `<file>.json`. A key pair is written to
+`<file>.json` (private key) and `<file>-pub.json` (public key), both
+sharing the same `kid`. The private key file is created with mode
+`0600`, and existing files are never overwritten.
+
+Example:
+
+```sh
+jwk-gen -a ES256 -k my-signing-key signing-key
+```
+
+writes `signing-key.json` and `signing-key-pub.json`.
+
 ## Exports
 
 ```js

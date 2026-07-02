@@ -1,8 +1,11 @@
 {
     "name": "tr-jwk",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "JWK key generation library (HMAC, EC, RSA, ML-DSA, AES)",
     "main": "index.js",
+    "bin": {
+        "jwk-gen": "./jwk-gen"
+    },
     "scripts": {
         "test": "node ./test/test.js"
     },
@@ -28,5 +31,8 @@
     "bugs": {
         "url": "https://github.com/rinne/node-tr-jwk/issues"
     },
-    "homepage": "https://github.com/rinne/node-tr-jwk#readme"
+    "homepage": "https://github.com/rinne/node-tr-jwk#readme",
+    "dependencies": {
+        "optist": "^2.0.1"
+    }
 }

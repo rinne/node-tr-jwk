@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const crypto = require('node:crypto');
+const Optist = require('optist');
+const ou = require('optist/util');
+
+const { macKeyGen, cipherKeyGen, ecKeyGen } = require('./index');
+
+const symmetricAlgs = [ 'HS256', 'HS384', 'HS512',
+                        'A128GCM', 'A192GCM', 'A256GCM',
+                        'A128GCMKW', 'A192GCMKW', 'A256GCMKW' ];
+const keyPairAlgs = [ 'ES256', 'ES384', 'ES512',
+                      'RS256', 'RS384', 'RS512',
+                      'ML-DSA-44', 'ML-DSA-65', 'ML-DSA-87',
+                      'P-256', 'P-384', 'P-521' ];
+const algs = [ ...symmetricAlgs, ...keyPairAlgs ];
+
+var opt = ((new Optist())
+           .opts([ { shortName: 'a',
+                     longName: 'algorithm',
+                     hasArg: true,
+                     required: true,
+                     optArgCb: ou.allowListCbFactory(algs),
+                     description: 'One of: ' + algs.join(', ') },
+                   { shortName: 'k',
+                     longName: 'key-identifier',
+                     hasArg: true,
+                     optArgCb: ou.nonEmptyCb,
+                     description: 'Key identifier (kid). Defaults to a random UUID.' } ])
+           .describeParam(0, 'file', 'Basename of the output file(s)')
+           .additional(1, 1)
+           .help('jwk-gen')
+           .parse());
+
+function keyGen(alg, kid) {
+    let secretKey, publicKey;
+    if ([ 'HS256', 'HS384', 'HS512' ].includes(alg)) {
+        secretKey = macKeyGen(alg);
+    } else if (symmetricAlgs.includes(alg)) {
+        secretKey = cipherKeyGen(alg);
+    } else if ([ 'P-256', 'P-384', 'P-521' ].includes(alg)) {
+        ({ secretKey, publicKey } = ecKeyGen(alg));
+    } else {
+        secretKey = macKeyGen(alg);
+        publicKey = (crypto
+                     .createPublicKey(crypto.createPrivateKey({ key: secretKey, format: 'jwk' }))
+                     .export({ format: 'jwk' }));
+        publicKey.alg = secretKey.alg;
+    }
+    secretKey.kid = kid;
+    if (publicKey) {
+        publicKey.kid = kid;
+    }
+    return { secretKey, publicKey };
+}
+
+function writeKeyFile(name, key, secret) {
+    fs.writeFileSync(name,
+                     JSON.stringify(key, null, 2) + '\n',
+                     { flag: 'wx', mode: secret ? 0o600 : 0o644 });
+    console.log(name);
+}
+
+try {
+    const file = opt.rest()[0];
+    const kid = opt.value('key-identifier') ?? crypto.randomUUID();
+    const { secretKey, publicKey } = keyGen(opt.value('algorithm'), kid);
+    writeKeyFile(file + '.json', secretKey, true);
+    if (publicKey) {
+        writeKeyFile(file + '-pub.json', publicKey, false);
+    }
+} catch (e) {
+    console.error('jwk-gen: ' + e.message);
+    process.exit(1);
+}
