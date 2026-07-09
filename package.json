@@ -1,6 +1,6 @@
 {
     "name": "tr-jwk",
-    "version": "1.3.0",
+    "version": "2.0.0",
     "description": "JWK key generation library (HMAC, EC, RSA, ML-DSA, AES)",
     "main": "index.js",
     "bin": {

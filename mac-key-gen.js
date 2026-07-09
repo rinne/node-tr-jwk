@@ -1,6 +1,10 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { promisify } = require('node:util');
+
+const randomBytes = promisify(crypto.randomBytes);
+const generateKeyPair = promisify(crypto.generateKeyPair);
 
 const keyOpts = {
     HS256: { mode: 'hmac', len: 256 },
@@ -52,6 +56,38 @@ function macKeyGen(alg) {
     return k;
 }
 
-module.exports = macKeyGen;
+async function macKeyGenAsync(alg) {
+    let opt = keyOpts[alg];
+    if (! opt) {
+        throw new Error('Invalid MAC algorighm');
+    }
+    let k = { alg };
+    switch (opt.mode) {
+    case 'hmac':
+        k.kty = 'oct';
+        k.k = (await randomBytes(opt.len >> 3)).toString('base64url');
+        break;
+    case 'ec':
+        Object.assign(k, ((await generateKeyPair('ec', { namedCurve: opt.curve }))
+                          .privateKey
+                          .export({ format: 'jwk' })));
+        break;
+    case 'rsa':
+        Object.assign(k, ((await generateKeyPair('rsa', { modulusLength: opt.len }))
+                          .privateKey
+                          .export({ format: 'jwk' })));
+        break;
+    case 'ml-dsa':
+        Object.assign(k, ((await generateKeyPair(opt.type, {}))
+                          .privateKey.export({ format: 'jwk' })));
+        break;
+    default:
+        throw new Error('Internal error');
+    }
+    Object.assign(k, { kid: crypto.randomUUID() });
+    return k;
+}
+
+module.exports = { macKeyGen, macKeyGenAsync };
 
 //Object.keys(keyOpts).forEach((x) => console.log(macKeyGen(x)));

@@ -11,6 +11,10 @@ The package exposes four utilities:
 - `ecKeyGen(curve)` for EC key pairs used with ECDH-ES
 - `rsaKeyGen(modulusLength)` for generic RSA key pairs
 
+Each utility also has an asynchronous counterpart (`macKeyGenAsync`,
+`cipherKeyGenAsync`, `ecKeyGenAsync`, `rsaKeyGenAsync`) that takes the
+same arguments and returns a promise resolving to the same result.
+
 # Reference
 
 ## Installation
@@ -115,6 +119,29 @@ Notes:
   caller decides the key's purpose and sets the intended algorithm
   (e.g. `RSA-OAEP`, `RSA-OAEP-256`, `RS256`).
 
+## Asynchronous API
+
+Every generator has a promise-returning variant:
+
+- `macKeyGenAsync(alg)`
+- `cipherKeyGenAsync(alg)`
+- `ecKeyGenAsync(curve)`
+- `rsaKeyGenAsync(modulusLength)`
+
+Arguments, results, and validation are identical to the synchronous
+functions. Key material is generated with the asynchronous
+`node:crypto` primitives, so key pair generation (notably RSA) does
+not block the event loop. Invalid arguments reject the returned
+promise instead of throwing synchronously.
+
+Example:
+
+```js
+const { rsaKeyGenAsync } = require('tr-jwk');
+
+const { secretKey, publicKey } = await rsaKeyGenAsync(4096);
+```
+
 ## `jwk-gen` command line tool
 
 Generates a key or a key pair and writes it to file(s).
@@ -153,7 +180,10 @@ writes `signing-key.json` and `signing-key-pub.json`.
 ## Exports
 
 ```js
-const { macKeyGen, cipherKeyGen, ecKeyGen, rsaKeyGen } = require('tr-jwk');
+const { macKeyGen, macKeyGenAsync,
+        cipherKeyGen, cipherKeyGenAsync,
+        ecKeyGen, ecKeyGenAsync,
+        rsaKeyGen, rsaKeyGenAsync } = require('tr-jwk');
 ```
 
 # Author

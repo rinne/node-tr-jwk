@@ -1,6 +1,9 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { promisify } = require('node:util');
+
+const generateKey = promisify(crypto.generateKey);
 
 const keyOpts = {
     A128GCM: { keyLength: 128, ops: [ 'encrypt', 'decrypt' ] },
@@ -26,6 +29,21 @@ function cipherKeyGen(alg) {
   };
 }
 
-module.exports = cipherKeyGen;
+async function cipherKeyGenAsync(alg) {
+
+  const length = keyOpts[alg]?.keyLength;
+  if (! length) {
+    throw new Error('Invalid encryption algorithm');
+  }
+  return {
+      ...((await generateKey('aes', { length })).export({ format: 'jwk' })),
+      alg,
+      key_ops: [ ...keyOpts[alg].ops ],
+      use: 'enc',
+      kid: crypto.randomUUID()
+  };
+}
+
+module.exports = { cipherKeyGen, cipherKeyGenAsync };
 
 // Object.keys(keyOpts).forEach((x) => console.log(cipherKeyGen(x)));

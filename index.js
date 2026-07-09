@@ -1,8 +1,11 @@
 'use strict';
 
-const macKeyGen = require('./mac-key-gen');
-const cipherKeyGen = require('./cipher-key-gen');
-const ecKeyGen = require('./ec-key-gen');
-const rsaKeyGen = require('./rsa-key-gen');
+const { macKeyGen, macKeyGenAsync } = require('./mac-key-gen');
+const { cipherKeyGen, cipherKeyGenAsync } = require('./cipher-key-gen');
+const { ecKeyGen, ecKeyGenAsync } = require('./ec-key-gen');
+const { rsaKeyGen, rsaKeyGenAsync } = require('./rsa-key-gen');
 
-module.exports = { macKeyGen, cipherKeyGen, ecKeyGen, rsaKeyGen };
+module.exports = { macKeyGen, macKeyGenAsync,
+                   cipherKeyGen, cipherKeyGenAsync,
+                   ecKeyGen, ecKeyGenAsync,
+                   rsaKeyGen, rsaKeyGenAsync };
