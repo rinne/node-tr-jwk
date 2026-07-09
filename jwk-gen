@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const Optist = require('optist');
 const ou = require('optist/util');
 
-const { macKeyGen, cipherKeyGen, ecKeyGen, rsaKeyGen } = require('./index');
+const { macKeyGen, cipherKeyGen, ecKeyGen, rsaKeyGen, mlKemKeyGen } = require('./index');
 
 const symmetricAlgs = [ 'HS256', 'HS384', 'HS512',
                         'A128GCM', 'A192GCM', 'A256GCM',
@@ -15,6 +15,7 @@ const keyPairAlgs = [ 'ES256', 'ES384', 'ES512',
                       'RS256', 'RS384', 'RS512',
                       'RSA-OAEP', 'RSA-OAEP-256',
                       'ML-DSA-44', 'ML-DSA-65', 'ML-DSA-87',
+                      'ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024',
                       'P-256', 'P-384', 'P-521' ];
 const algs = [ ...symmetricAlgs, ...keyPairAlgs ];
 
@@ -43,6 +44,8 @@ function keyGen(alg, kid) {
         secretKey = cipherKeyGen(alg);
     } else if ([ 'P-256', 'P-384', 'P-521' ].includes(alg)) {
         ({ secretKey, publicKey } = ecKeyGen(alg));
+    } else if ([ 'ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024' ].includes(alg)) {
+        ({ secretKey, publicKey } = mlKemKeyGen(alg));
     } else if ([ 'RSA-OAEP', 'RSA-OAEP-256' ].includes(alg)) {
         ({ secretKey, publicKey } = rsaKeyGen((alg === 'RSA-OAEP') ? 2048 : 4096));
         Object.assign(secretKey, { alg, use: 'enc', key_ops: [ 'unwrapKey', 'decrypt' ] });

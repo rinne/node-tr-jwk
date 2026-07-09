@@ -4,16 +4,19 @@ JWK key generation library for Node.js. Produces JSON Web Keys ready
 to use with JWT signers, JWE encryptors, ECDH-ES key agreement, and
 AES content-encryption / key-wrap operations.
 
-The package exposes four utilities:
+The package exposes six utilities:
 
 - `macKeyGen(alg)` for HMAC, ECDSA, RSA, and ML-DSA signing keys
 - `cipherKeyGen(alg)` for AES content-encryption and AES-GCM key-wrap keys
 - `ecKeyGen(curve)` for EC key pairs used with ECDH-ES
 - `rsaKeyGen(modulusLength)` for generic RSA key pairs
+- `mlDsaKeyGen(variant)` for ML-DSA (post-quantum signature) key pairs
+- `mlKemKeyGen(variant)` for ML-KEM (post-quantum key encapsulation) key pairs
 
 Each utility also has an asynchronous counterpart (`macKeyGenAsync`,
-`cipherKeyGenAsync`, `ecKeyGenAsync`, `rsaKeyGenAsync`) that takes the
-same arguments and returns a promise resolving to the same result.
+`cipherKeyGenAsync`, `ecKeyGenAsync`, `rsaKeyGenAsync`,
+`mlDsaKeyGenAsync`, `mlKemKeyGenAsync`) that takes the same arguments
+and returns a promise resolving to the same result.
 
 # Reference
 
@@ -119,6 +122,60 @@ Notes:
   caller decides the key's purpose and sets the intended algorithm
   (e.g. `RSA-OAEP`, `RSA-OAEP-256`, `RS256`).
 
+## `mlDsaKeyGen(variant)`
+
+Generates an ML-DSA (FIPS 204, post-quantum signature) key pair and
+returns both the private and public JWK.
+
+Supported `variant` values:
+
+- `ML-DSA-44`
+- `ML-DSA-65`
+- `ML-DSA-87`
+
+Example:
+
+```js
+const { mlDsaKeyGen } = require('tr-jwk');
+
+const { secretKey, publicKey } = mlDsaKeyGen('ML-DSA-65');
+```
+
+Notes:
+
+- Keys are returned as `kty: "AKP"` JWKs with `alg` set to the
+  variant; the private JWK carries the seed in `priv`, and both JWKs
+  carry the public key in `pub`.
+- Both returned JWKs share the same random `kid`.
+- The private JWK is directly usable for signing with `tr-jwt`
+  (`encode('ML-DSA-65', secretKey, ...)`).
+
+## `mlKemKeyGen(variant)`
+
+Generates an ML-KEM (FIPS 203, post-quantum key encapsulation) key
+pair and returns both the private and public JWK.
+
+Supported `variant` values:
+
+- `ML-KEM-512`
+- `ML-KEM-768`
+- `ML-KEM-1024`
+
+Example:
+
+```js
+const { mlKemKeyGen } = require('tr-jwk');
+
+const { secretKey, publicKey } = mlKemKeyGen('ML-KEM-768');
+```
+
+Notes:
+
+- Keys are returned as `kty: "AKP"` JWKs with `alg` set to the
+  variant; the private JWK carries the seed in `priv`, and both JWKs
+  carry the public key in `pub`.
+- Both returned JWKs share the same random `kid`.
+
 ## Asynchronous API
 
 Every generator has a promise-returning variant:
@@ -127,6 +184,8 @@ Every generator has a promise-returning variant:
 - `cipherKeyGenAsync(alg)`
 - `ecKeyGenAsync(curve)`
 - `rsaKeyGenAsync(modulusLength)`
+- `mlDsaKeyGenAsync(variant)`
+- `mlKemKeyGenAsync(variant)`
 
 Arguments, results, and validation are identical to the synchronous
 functions. Key material is generated with the asynchronous
@@ -154,7 +213,8 @@ Options:
 
 - `-a <alg>`, `--algorithm=<alg>` — key algorithm; any `alg` accepted
   by `macKeyGen` or `cipherKeyGen`, an EC curve accepted by
-  `ecKeyGen`, or `RSA-OAEP` / `RSA-OAEP-256`
+  `ecKeyGen`, an ML-KEM variant accepted by `mlKemKeyGen`, or
+  `RSA-OAEP` / `RSA-OAEP-256`
 - `-k <kid>`, `--key-identifier=<kid>` — key identifier; a random
   UUID is assigned if not given
 
@@ -183,7 +243,9 @@ writes `signing-key.json` and `signing-key-pub.json`.
 const { macKeyGen, macKeyGenAsync,
         cipherKeyGen, cipherKeyGenAsync,
         ecKeyGen, ecKeyGenAsync,
-        rsaKeyGen, rsaKeyGenAsync } = require('tr-jwk');
+        rsaKeyGen, rsaKeyGenAsync,
+        mlDsaKeyGen, mlDsaKeyGenAsync,
+        mlKemKeyGen, mlKemKeyGenAsync } = require('tr-jwk');
 ```
 
 # Author
