@@ -17,9 +17,13 @@ function mlKemKeyGen(variant) {
     }
     const k = crypto.generateKeyPairSync(variants[variant], {});
     const kid = crypto.randomUUID();
+    // node:crypto stamps the variant into the exported JWK alg, but
+    // consumers depend on it, so it is set explicitly for robustness.
     const secretKey = k.privateKey.export({ format: 'jwk' });
+    secretKey.alg = variant;
     secretKey.kid = kid;
     const publicKey = k.publicKey.export({ format: 'jwk' });
+    publicKey.alg = variant;
     publicKey.kid = kid;
     return { secretKey, publicKey };
 }
@@ -31,8 +35,10 @@ async function mlKemKeyGenAsync(variant) {
     const k = await generateKeyPair(variants[variant], {});
     const kid = crypto.randomUUID();
     const secretKey = k.privateKey.export({ format: 'jwk' });
+    secretKey.alg = variant;
     secretKey.kid = kid;
     const publicKey = k.publicKey.export({ format: 'jwk' });
+    publicKey.alg = variant;
     publicKey.kid = kid;
     return { secretKey, publicKey };
 }
