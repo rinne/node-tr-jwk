@@ -119,7 +119,8 @@ const macAlgs = [ 'HS256', 'HS384', 'HS512',
                   'RS256', 'RS384', 'RS512',
                   'ML-DSA-44', 'ML-DSA-65', 'ML-DSA-87' ];
 const cipherAlgs = [ 'A128GCM', 'A192GCM', 'A256GCM',
-                     'A128GCMKW', 'A192GCMKW', 'A256GCMKW' ];
+                     'A128GCMKW', 'A192GCMKW', 'A256GCMKW',
+                     'A128KW', 'A192KW', 'A256KW' ];
 const ecCurves = [ 'P-256', 'P-384', 'P-521' ];
 const mlDsaVariants = [ 'ML-DSA-44', 'ML-DSA-65', 'ML-DSA-87' ];
 const mlKemVariants = [ 'ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024' ];
@@ -131,6 +132,21 @@ ecCurves.forEach((curve) => checkEcPair(curve, ecKeyGen(curve)));
 checkRsaPair(1024, rsaKeyGen(1024));
 mlDsaVariants.forEach((variant) => checkAkpPair(variant, mlDsaKeyGen(variant)));
 mlKemVariants.forEach((variant) => checkAkpPair(variant, mlKemKeyGen(variant)));
+
+// HS* keys may be requested longer than the hash-size default.
+for (const [ alg, defBits ] of [ [ 'HS256', 256 ], [ 'HS384', 384 ], [ 'HS512', 512 ] ]) {
+    const wide = macKeyGen(alg, { length: 1024 });
+    assert.equal(Buffer.from(wide.k, 'base64url').length, 128);
+    checkMacKey(alg, macKeyGen(alg, { length: defBits }));
+    assert.throws(() => macKeyGen(alg, { length: defBits - 8 }), /Invalid key length/);
+}
+assert.throws(() => macKeyGen('HS256', { length: 4104 }), /Invalid key length/);
+assert.throws(() => macKeyGen('HS256', { length: 260 }), /Invalid key length/);
+assert.throws(() => macKeyGen('HS256', { length: '512' }), /Invalid key length/);
+assert.throws(() => macKeyGen('HS256', { nope: 1 }), /Unknown option/);
+assert.throws(() => macKeyGen('HS256', 'wide'), /Invalid options/);
+assert.throws(() => macKeyGen('ES256', { length: 512 }), /Invalid length option/);
+checkMacKey('ES256', macKeyGen('ES256', {}));
 
 assert.throws(() => macKeyGen('nope'), /Invalid MAC/);
 assert.throws(() => cipherKeyGen('nope'), /Invalid encryption/);
@@ -161,6 +177,11 @@ assert.throws(() => mlKemKeyGen('ML-KEM-99'), /Invalid ML-KEM/);
     for (const variant of mlKemVariants) {
         checkAkpPair(variant, await mlKemKeyGenAsync(variant));
     }
+
+    const wide = await macKeyGenAsync('HS512', { length: 2048 });
+    assert.equal(Buffer.from(wide.k, 'base64url').length, 256);
+    await assert.rejects(macKeyGenAsync('HS256', { length: 128 }), /Invalid key length/);
+    await assert.rejects(macKeyGenAsync('RS256', { length: 2048 }), /Invalid length option/);
 
     await assert.rejects(macKeyGenAsync('nope'), /Invalid MAC/);
     await assert.rejects(cipherKeyGenAsync('nope'), /Invalid encryption/);

@@ -28,7 +28,7 @@ npm install tr-jwk
 
 Node.js `>=24.0.0` is required.
 
-## `macKeyGen(alg)`
+## `macKeyGen(alg, opts)`
 
 Generates a private JWK suitable for JWT signing.
 
@@ -39,13 +39,20 @@ Supported `alg` values:
 - `RS256`, `RS384`, `RS512`
 - `ML-DSA-44`, `ML-DSA-65`, `ML-DSA-87`
 
+The optional `opts` object supports one field:
+
+- `length` — HMAC key length in bits for the `HS*` algorithms.
+  Defaults to the hash size (256/384/512); may be larger, up to 4096
+  bits, in multiples of 8. Not applicable to the asymmetric
+  algorithms.
+
 Example:
 
 ```js
 const { macKeyGen } = require('tr-jwk');
 
 const key = macKeyGen('ES256');
-console.log(key);
+const wideHmacKey = macKeyGen('HS256', { length: 1024 });
 ```
 
 Notes:
@@ -62,6 +69,7 @@ Supported `alg` values:
 
 - `A128GCM`, `A192GCM`, `A256GCM`
 - `A128GCMKW`, `A192GCMKW`, `A256GCMKW`
+- `A128KW`, `A192KW`, `A256KW`
 
 Example:
 
@@ -180,7 +188,7 @@ Notes:
 
 Every generator has a promise-returning variant:
 
-- `macKeyGenAsync(alg)`
+- `macKeyGenAsync(alg, opts)`
 - `cipherKeyGenAsync(alg)`
 - `ecKeyGenAsync(curve)`
 - `rsaKeyGenAsync(modulusLength)`

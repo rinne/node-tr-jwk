@@ -6,6 +6,8 @@ const { promisify } = require('node:util');
 const randomBytes = promisify(crypto.randomBytes);
 const generateKeyPair = promisify(crypto.generateKeyPair);
 
+const HMAC_MAX_BITS = 4096;
+
 const keyOpts = {
     HS256: { mode: 'hmac', len: 256 },
     HS384: { mode: 'hmac', len: 384 },
@@ -21,16 +23,47 @@ const keyOpts = {
     'ML-DSA-87': { mode: 'ml-dsa', type: 'ml-dsa-87' }
 }
 
-function macKeyGen(alg) {
+// HS* keys default to the hash size but may be requested longer via
+// opts.length (bits, multiple of 8, capped). The length option is not
+// applicable to the asymmetric algorithms.
+function _keyBits(opt, opts) {
+    if (opts === undefined || opts === null) {
+        opts = {};
+    }
+    if (! ((typeof opts === 'object') && ! Array.isArray(opts))) {
+        throw new Error('Invalid options');
+    }
+    for (const key of Object.keys(opts)) {
+        if (key !== 'length') {
+            throw new Error('Unknown option: ' + key);
+        }
+    }
+    if (opts.length === undefined) {
+        return (opt.mode === 'hmac') ? opt.len : undefined;
+    }
+    if (opt.mode !== 'hmac') {
+        throw new Error('Invalid length option for algorithm');
+    }
+    if (! (Number.isSafeInteger(opts.length) &&
+           (opts.length >= opt.len) &&
+           (opts.length <= HMAC_MAX_BITS) &&
+           ((opts.length % 8) === 0))) {
+        throw new Error('Invalid key length');
+    }
+    return opts.length;
+}
+
+function macKeyGen(alg, opts) {
     let opt = keyOpts[alg];
     if (! opt) {
         throw new Error('Invalid MAC algorighm');
     }
+    const bits = _keyBits(opt, opts);
     let k = { alg };
     switch (opt.mode) {
     case 'hmac':
         k.kty = 'oct';
-        k.k = crypto.randomBytes(opt.len >> 3).toString('base64url');
+        k.k = crypto.randomBytes(bits >> 3).toString('base64url');
         break;
     case 'ec':
         Object.assign(k, (crypto
@@ -56,16 +89,17 @@ function macKeyGen(alg) {
     return k;
 }
 
-async function macKeyGenAsync(alg) {
+async function macKeyGenAsync(alg, opts) {
     let opt = keyOpts[alg];
     if (! opt) {
         throw new Error('Invalid MAC algorighm');
     }
+    const bits = _keyBits(opt, opts);
     let k = { alg };
     switch (opt.mode) {
     case 'hmac':
         k.kty = 'oct';
-        k.k = (await randomBytes(opt.len >> 3)).toString('base64url');
+        k.k = (await randomBytes(bits >> 3)).toString('base64url');
         break;
     case 'ec':
         Object.assign(k, ((await generateKeyPair('ec', { namedCurve: opt.curve }))

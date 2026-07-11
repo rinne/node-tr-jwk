@@ -11,7 +11,10 @@ const keyOpts = {
     A256GCM: { keyLength: 256, ops: [ 'encrypt', 'decrypt' ] },
     A128GCMKW: { keyLength: 128, ops: ['wrapKey', 'unwrapKey'] },
     A192GCMKW: { keyLength: 192, ops: ['wrapKey', 'unwrapKey'] },
-    A256GCMKW: { keyLength: 256, ops: ['wrapKey', 'unwrapKey'] }
+    A256GCMKW: { keyLength: 256, ops: ['wrapKey', 'unwrapKey'] },
+    A128KW: { keyLength: 128, ops: ['wrapKey', 'unwrapKey'] },
+    A192KW: { keyLength: 192, ops: ['wrapKey', 'unwrapKey'] },
+    A256KW: { keyLength: 256, ops: ['wrapKey', 'unwrapKey'] }
 };
 
 function cipherKeyGen(alg) {
